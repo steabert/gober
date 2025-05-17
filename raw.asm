@@ -37,4 +37,5 @@ use64
 ; sub byte [r8], 69
 ; add r8, 69
 ; sub r8, 69
-cmp byte [r8], 0
+; cmp byte [r8], 0
+nop

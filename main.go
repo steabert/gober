@@ -46,8 +46,8 @@ func main() {
 		log.Fatalf("failed to parse source: %s\n", err)
 	}
 
-	for _, op := range ops {
-		fmt.Printf("%c %d\n", op.kind, op.operand)
+	for i, op := range ops {
+		fmt.Printf("[%d] %c %d\n", i, op.kind, op.operand)
 	}
 
 	// interpret(ops)
@@ -253,6 +253,12 @@ func jit(ops []operation) []byte {
 			backpatches = append(backpatches, backpatch{srcAddr: len(code), dstOp: op.operand})
 		}
 	}
+
+	// we might need to jump to the address after the last instruction,
+	// so provide a no-op to land on
+	opaddrs = append(opaddrs, len(code))
+	code = append(code, []byte{0x90}...) // nop
+
 	code = append(code, []byte{0x48, 0x89, 0xec}...) // mov rsp, rbp
 	code = append(code, []byte{0x5d}...)             // pop rbp
 	code = append(code, 0xc3)                        // ret
