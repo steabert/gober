@@ -6,8 +6,8 @@ use64
 ; sub dword [r8], 0x12345678
 ; add r8, 0x12345678
 
-mov rsp, rbp
-pop rbp
+; mov rsp, rbp
+; pop rbp
 ; push rbp
 ; mov rbp, rsp
 ; ; add to r8 and allocate stack to fit
@@ -32,3 +32,9 @@ pop rbp
 ; mov rax, 0xffffffff
 ; mov rax, 0x1122334455667788
 ; ret
+
+; add byte [r8], 69
+; sub byte [r8], 69
+; add r8, 69
+; sub r8, 69
+cmp byte [r8], 0

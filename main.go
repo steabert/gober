@@ -207,30 +207,22 @@ func jit(ops []operation) []byte {
 	// Memory will be allocated on the stack, using r8 as the mem_ptr
 	// and expanding the stack as necessary.
 
-	code = append(code, []byte{0x55}...)             // push rbp
-	code = append(code, []byte{0x48, 0x89, 0xe5}...) // mov rbp, rsp
-	code = append(code, []byte{0x6a, 0x00}...)       // push 0
-	code = append(code, []byte{0x6a, 0x00}...)       // push 0
-	code = append(code, []byte{0x49, 0x89, 0xe0}...) // mov r8, rsp
+	code = append(code, []byte{0x55}...)                   // push rbp
+	code = append(code, []byte{0x48, 0x89, 0xe5}...)       // mov rbp, rsp
+	code = append(code, []byte{0x6a, 0x00}...)             // push 0
+	code = append(code, []byte{0x49, 0x89, 0xe0}...)       // mov r8, rsp
+	code = append(code, []byte{0x49, 0x83, 0xc0, 0x07}...) // add r8, 7
 	for _, op := range ops {
 		opaddrs = append(opaddrs, len(code))
 		switch op.kind {
 		case opKindInc:
-			code = append(code,
-				binary.LittleEndian.AppendUint32([]byte{0x41, 0x81, 0x00}, uint32(op.operand))..., // add dword [r8], <value>
-			)
+			code = append(code, []byte{0x41, 0x80, 0x00, uint8(op.operand)}...) // add byte [r8], <value>
 		case opKindDec:
-			code = append(code,
-				binary.LittleEndian.AppendUint32([]byte{0x41, 0x81, 0x28}, uint32(op.operand))..., // sub dword [r8], <value>
-			)
+			code = append(code, []byte{0x41, 0x80, 0x28, uint8(op.operand)}...) // sub byte [r8], <value>
 		case opKindLeft:
-			code = append(code,
-				binary.LittleEndian.AppendUint32([]byte{0x49, 0x81, 0xc0}, 8*uint32(op.operand))..., // add r8, <value>
-			)
+			code = append(code, []byte{0x49, 0x83, 0xc0, uint8(op.operand)}...) // add r8, <value>
 		case opKindRight:
-			code = append(code,
-				binary.LittleEndian.AppendUint32([]byte{0x49, 0x81, 0xe8}, 8*uint32(op.operand))..., // sub r8, <value>
-			)
+			code = append(code, []byte{0x49, 0x83, 0xe8, uint8(op.operand)}...) // sub r8, <value>
 			// allocate more memory on the stack by pushing repeatedly until
 			// the r8 address is greater or equal the rsp
 			// start
@@ -250,12 +242,12 @@ func jit(ops []operation) []byte {
 				code = append(code, []byte{0x0f, 0x05}...)                               // syscall
 			}
 		case opKindJumpForward:
-			code = append(code, []byte{0x41, 0x83, 0x38, 0x00}...)             // cmp dword [r8], 0
+			code = append(code, []byte{0x41, 0x80, 0x38, 0x00}...)             // cmp byte [r8], 0
 			code = append(code, []byte{0x0f, 0x84, 0x00, 0x00, 0x00, 0x00}...) // je <value>
 
 			backpatches = append(backpatches, backpatch{srcAddr: len(code), dstOp: op.operand})
 		case opKindJumpBackward:
-			code = append(code, []byte{0x41, 0x83, 0x38, 0x00}...)             // cmp dword [r8], 0
+			code = append(code, []byte{0x41, 0x80, 0x38, 0x00}...)             // cmp byte [r8], 0
 			code = append(code, []byte{0x0f, 0x85, 0x00, 0x00, 0x00, 0x00}...) // jne <value>
 
 			backpatches = append(backpatches, backpatch{srcAddr: len(code), dstOp: op.operand})
